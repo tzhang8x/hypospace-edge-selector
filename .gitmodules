@@ -1,0 +1,3 @@
+[submodule "benchmark/HypoSpace"]
+	path = benchmark/HypoSpace
+	url = https://github.com/CTT-Pavilion/_HypoSpace.git

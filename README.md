@@ -6,18 +6,30 @@ Can a small model turn a repeated correct answer from a language model into a di
 
 The complete experiment is in [hypospace.py](hypospace.py), including compact records of the original generations. The default command runs offline.
 
+## Original HypoSpace benchmark
+
+The [authors' benchmark](benchmark/HypoSpace) is included as a Git submodule pinned to [commit c69e931](https://github.com/CTT-Pavilion/_HypoSpace/tree/c69e9318577b34b5b896996571aefd4ba6053f58). Opening that directory on GitHub shows the original source at the pinned revision.
+
+| Official domain | Dataset generator | Benchmark runner |
+|---|---|---|
+| Causal graphs | [generate_causal_dataset.py](https://github.com/CTT-Pavilion/_HypoSpace/blob/c69e9318577b34b5b896996571aefd4ba6053f58/causal/generate_causal_dataset.py) | [run_causal_benchmark.py](https://github.com/CTT-Pavilion/_HypoSpace/blob/c69e9318577b34b5b896996571aefd4ba6053f58/causal/run_causal_benchmark.py) |
+| 3D voxel reconstruction | [generate_3d_dataset_complete.py](https://github.com/CTT-Pavilion/_HypoSpace/blob/c69e9318577b34b5b896996571aefd4ba6053f58/3d/generate_3d_dataset_complete.py) | [run_3d_benchmark.py](https://github.com/CTT-Pavilion/_HypoSpace/blob/c69e9318577b34b5b896996571aefd4ba6053f58/3d/run_3d_benchmark.py) |
+| Boolean programs | [boolean_dataset.py](https://github.com/CTT-Pavilion/_HypoSpace/blob/c69e9318577b34b5b896996571aefd4ba6053f58/boolean/boolean_dataset.py) | [boolean_benchmark.py](https://github.com/CTT-Pavilion/_HypoSpace/blob/c69e9318577b34b5b896996571aefd4ba6053f58/boolean/boolean_benchmark.py) |
+
+Our reported experiments cover the causal domain only. The Qwen baseline uses our prompt and a fixed budget of 12 submissions per question. The standalone replay in `hypospace.py` reconstructs the compatible DAG sets for our recorded questions, then evaluates the learned edit selector. For the authors' original runner, configurations and usage examples, see the [upstream README](https://github.com/CTT-Pavilion/_HypoSpace/blob/c69e9318577b34b5b896996571aefd4ba6053f58/README.md).
+
 ## Reproduce the results
 
 Use Python 3.10 or later. From a terminal:
 
 ```bash
-git clone https://github.com/tzhang8x/hypospace-edge-selector.git
+git clone --recurse-submodules https://github.com/tzhang8x/hypospace-edge-selector.git
 cd hypospace-edge-selector
 python -m pip install numpy networkx
 python hypospace.py --output results
 ```
 
-Use a fresh output directory to reproduce the published run. The script enumerates the possible directed acyclic graphs (DAGs), reconstructs the questions, trains the ranker, and writes three files.
+For an existing checkout, run `git submodule update --init --recursive` to fetch the original benchmark. Use a fresh output directory to reproduce the published run. The script enumerates the possible directed acyclic graphs (DAGs), reconstructs the questions, trains the ranker, and writes three files.
 
 | Output | What to look for |
 |---|---|
