@@ -6,7 +6,7 @@ Optional fresh API baseline (uses tokens): python hypospace.py --collect 5 --out
 Then replay: python hypospace.py --output new-run
 For a fresh four-node baseline use --collect 4. Each run takes twelve draws per question.
 Existing completed calls in the output directory are reused. The default run uses the
-recorded Qwen3.8-27B graphs. It trains on four nodes and evaluates frozen weights on five.
+recorded Qwen3.8-27B graphs. It trains on four nodes and evaluates frozen weights on five and six nodes.
 The embedded records contain only observation masks and parsed graph masks, no credentials.
 
 Benchmark: https://github.com/CTT-Pavilion/_HypoSpace
@@ -45,13 +45,13 @@ def observation_family(observations, nodes):
 
 
 class Episode:
-    def __init__(self, item, rows, nodes):
+    def __init__(self, item, rows, nodes, truth=None):
         self.nodes = tuple(nodes)
         self.edges = tuple(permutations(nodes, 2))
         self.name = item["observation_set_id"]
         self.obs = item["observations"]
         self.family = observation_family(self.obs, self.nodes)
-        self.truth = {frozenset(map(tuple, g["edges"])) for g in item["ground_truth_graphs"]}
+        self.truth = truth if truth is not None else {frozenset(map(tuple, g["edges"])) for g in item["ground_truth_graphs"]}
         self.draws = [frozenset(map(tuple, r["edges"])) if r["valid"] else None for r in rows]
         for row in rows:
             graph = row["edges"]
@@ -439,6 +439,38 @@ five_12 B0,D12 a000 a000 a000 a000 a000 a000 a000 a000 a000 a000 a000 a000""",
 }
 
 
+SAMPLES[6] = """six-00 B9,F10 200000a0 200000a0 200000a0 200000a0 200000a0 200000a0 200000a0 200000a0 200000a0 200000a0 200000a0 200000a0
+six-01 C3b,E9 907c00 907c00 907c00 7c00 107c00 907c00 7c00 7c00 907c00 907c00 7c00 45c00
+six-02 B10,C18 41000 41000 41000 41000 41000 41100 1100 41000 41100 1100 1100 41100
+six-03 A24,B1c 1d2 1d2 1d2 0 1d2 1d2 1d2 1d2 1d2 0 0 1d2
+six-04 D17,E4 478000 478000 478000 0 478000 78000 38000 478000 38000 38000 438000 38000
+six-05 A20,E20 1000000 1000000 1000010 3000000 1000010 1000010 1000010 1000000 1000000 1000000 1000010 1000010
+six-06 A0,D13 58000 58000 58000 58000 58000 58000 58000 58000 58000 58000 58000 58000
+six-07 E2d,F5 3d00000 6 3d00000 3d00000 3d00000 3d00000 3d00000 3d00000 3d00000 9d00000 1d00000 1d00000
+six-08 B20,E20 1000100 1000200 1000000 1000200 1000200 1000200 1000200 1000200 1000200 1000200 1000200 1000200
+six-09 B34,D30 c6040 c6041 c6040 c6040 c6040 c6040 c6040 c6040 c6040 c6040 c6040 c6040
+six-10 D4,F1d 3a000000 3a000000 3a020000 3a020000 3a020000 3a020000 3a020000 3a020000 3a020000 3a020000 3a020000 0
+six-11 E0,Fc 8001000 8001000 8001000 8001000 8001000 8001000 8001000 8001000 8001000 8001000 8001000 8001000
+six-12 C22,E23 1300000 104800 104800 304800 104800 104800 104800 104800 104800 1304800 1304800 104800
+six-13 A36,F14 341 341 28000141 28000341 8000341 341 8000141 8000341 341 8000141 8000141 20000341
+six-14 A3c,F1c 41002 8041002 41002 8041002 41002 8041002 8041002 0 8041000 8041002 8041002 8041000
+six-15 A20,C29 5410 5410 1410 1410 1410 1410 1410 1410 1410 1410 1410 1410
+six-16 D17,F5 78000 a078000 a078000 a078000 a078000 a078000 a078000 0 0 a078000 a078000 a078000
+six-17 B20,C32 6800 2810 6800 6800 6800 1000900 a00 6800 a00 6a00 2000 2a00
+six-18 A24,B3d 32 32 1b2 32 3e0 1b2 1a0 3e0 32 1041022 32 4022
+six-19 A3e,F6 c1 41 3c1 1c1 41 41 41 1041 41 41 41 1041041
+six-20 C19,F18 30003400 10003400 3400 3400 10003400 8001400 8003400 20001400 3400 10001400 20001400 10001400
+six-21 D6,E22 1230000 1230000 1230000 1230000 1230000 1230000 1230000 1230000 1230000 1230000 1230000 1230000
+six-22 B1,C28 5000 5000 5020 5020 5020 5020 5020 5020 5020 5020 5020 5020
+six-23 D35,F4 80e8000 80e8000 80e8000 80e8000 80e8000 80e8000 0 80e8000 80e8000 80e8000 e8000 e8000
+six-24 A0,F15 2a000000 2a000000 2a000000 2a000000 0 2a000000 2a000000 2a000000 2a000000 2a000000 2a000000 2a000000
+six-25 C28,E9 905000 905000 905000 905000 905000 905000 905000 905000 905000 905000 905000 105000
+six-26 C23,D0 4c00 4c00 4c00 4c00 4c00 4c00 4c00 4c00 4c00 4c00 4c00 4c00
+six-27 B1,E2d 1d00000 1d00000 1d00000 1d00000 1d00000 1d00020 1c00020 20 1c00020 c00020 20 1c00020
+six-28 B20,D26 - b0200 30200 30200 30200 30200 30200 30200 10240 30200 30200 30200
+six-29 Eb,Fe 4080022 4b00000 b00000 1cb00000 b00000 b00000 1cb00000 4b00000 4b00000 b00000 cb00000 cb00000"""
+
+
 def train_four(groups, output):
     # Balance fold sizes without using any labels or performance data.
     folds = [[] for _ in range(5)]
@@ -473,23 +505,30 @@ def evaluate(output):
     weights = output/"edit-mlp.npz"
     with np.load(weights) as saved:
         params = [saved[k] for k in ("w", "b", "out", "bias")]
-    groups = load_groups(5, output)
+    for size, filename in [(5, "five-node-report.json"), (6, "six-node-report.json")]:
+        transfer_report(output, size, filename, params, weights)
+
+
+def transfer_report(output, size, filename, params, weights):
+    groups = load_groups(size, output)
     episodes = [ep for family in groups.values() for ep in family]
+    if size == 6:
+        episodes.sort(key=lambda ep: ep.name)  # Preserve the six-node collection order.
     rows, summary = [], []
     settings = [("original", 0)] + [(p,k) for k in (1,3) for p in ("fixed","random","mlp")]
     for policy,k in settings:
-        batch = [replay(ep,policy,k,params) for ep in episodes]
+        batch = [dict(solutions=len(ep.truth), **replay(ep,policy,k,params)) for ep in episodes]
         rows.extend(batch)
         summary.append(dict(policy=policy,k=k,recovery=np.mean([r["recovery"] for r in batch]),
                             **{f:sum(r[f] for r in batch) for f in ("correct","distinct","checks")}))
-    report = dict(train_nodes=4, test_nodes=5, tasks=len(episodes), families=len(groups),
+    report = dict(train_nodes=4, test_nodes=size, tasks=len(episodes), families=len(groups),
                   weights_sha256=sha256(weights.read_bytes()).hexdigest(), summary=summary, episodes=rows)
-    (output/"five-node-report.json").write_text(json.dumps(report, indent=2))
+    (output/filename).write_text(json.dumps(report, indent=2))
     print(json.dumps(summary,indent=2))
 
 
 def questions(size):
-    nodes = tuple("ABCDE"[:size])
+    nodes = tuple("ABCDEF"[:size])
     for line in SAMPLES[size].splitlines():
         name, signature, *draws = line.split()
         observations = []
@@ -517,28 +556,83 @@ def dag_archive(nodes, edges):
         yield mask, arcs, {n:nx.descendants(g,n) for n in nodes}
 
 
+def enumerate_six_answers(questions, nodes, edges):
+    """Assign each labeled DAG to its lexicographically first topological order."""
+    forward=list(combinations(range(6),2))
+    masks=np.arange(1<<15,dtype=np.uint32)
+    has={(i,j):(masks & (1<<k))!=0 for k,(i,j) in enumerate(forward)}
+    reach=np.zeros((6,len(masks)),dtype=np.uint8)
+    incoming={}
+    for i,j in reversed(forward):
+        reach[i] |= np.where(has[i,j],reach[j] | (1<<j),0).astype(np.uint8)
+        incoming[i,j]=np.logical_or.reduce([has[t,j] for t in range(i,j)])
+    truths=[set() for _ in questions]
+    total=0
+    for order in permutations(range(6)):
+        keep=np.ones(len(masks),dtype=bool)
+        for i,j in forward:
+            if order[j]<order[i]:
+                keep &= incoming[i,j]
+        idx=np.flatnonzero(keep)
+        total+=len(idx)
+        encoded=np.zeros(len(idx),dtype=np.uint32)
+        for i,j in forward:
+            bit=edges.index((nodes[order[i]],nodes[order[j]]))
+            encoded |= has[i,j][idx].astype(np.uint32)<<bit
+        local=reach[:,idx]
+        for q,truth in zip(questions,truths):
+            match=np.ones(len(idx),dtype=bool)
+            for node,m in q:
+                target=sum(1<<pos for pos,n in enumerate(order) if m & (1<<n))
+                match &= local[order.index(node)]==target
+            truth.update(encoded[match].tolist())
+    assert total==3781503 and all(truths)
+    return truths
+
+
+class MaskSet:
+    def __init__(self, values, edges):
+        self.edges = edges
+        self.values=values
+
+    def __contains__(self, graph):
+        return sum(1<<self.edges.index(e) for e in graph) in self.values
+
+    def __len__(self):
+        return len(self.values)
+
+
 def load_groups(size, output):
-    nodes = tuple("ABCDE"[:size])
+    nodes = tuple("ABCDEF"[:size])
     edges = tuple(permutations(nodes, 2))
-    archive = list(dag_archive(nodes, edges))
-    if len(archive) != {4:543, 5:29281}[size]:
-        raise ValueError("Incomplete DAG archive")
+    tasks = list(questions(size))
+    if size == 6:
+        signatures = [tuple((nodes.index(o["perturbed_node"]),
+                             sum(o["effects"][n] << i for i,n in enumerate(nodes)))
+                            for o in observations) for _,observations,_ in tasks]
+        six_truths = enumerate_six_answers(signatures, nodes, edges)
+    else:
+        archive = list(dag_archive(nodes, edges))
+        if len(archive) != {4:543, 5:29281}[size]:
+            raise ValueError("Incomplete DAG archive")
     checkpoint = output/f"draws-{size}.json"
     fresh = json.loads(checkpoint.read_text()) if checkpoint.exists() else None
     groups = defaultdict(list)
-    for name, observations, recorded in questions(size):
-        required = [(o["perturbed_node"], {n for n,v in o["effects"].items() if v})
-                    for o in observations]
-        truth = {mask:{"edges":arcs} for mask, arcs, reach in archive
-                 if all(reach[n] == targets for n, targets in required)}
+    for index,(name, observations, recorded) in enumerate(tasks):
+        if size == 6:
+            truth = six_truths[index]
+        else:
+            required = [(o["perturbed_node"], {n for n,v in o["effects"].items() if v})
+                        for o in observations]
+            truth = {mask for mask, _, reach in archive
+                     if all(reach[n] == targets for n, targets in required)}
         draws = recorded if fresh is None else fresh.get(name, [])
         if len(draws) != 12:
             raise ValueError(f"Incomplete baseline for {name}. Resume with --collect {size}.")
         rows = [dict(edges=None if m is None else [e for i,e in enumerate(edges) if m & (1<<i)],
                      valid=m in truth) for m in draws]
-        item = dict(observation_set_id=name, observations=observations,
-                    ground_truth_graphs=truth.values())
-        ep = TransferEpisode(item, rows, nodes)
+        item = dict(observation_set_id=name, observations=observations)
+        ep = TransferEpisode(item, rows, nodes, truth=MaskSet(truth, edges))
         groups[ep.family].append(ep)
     return groups
 
@@ -568,7 +662,7 @@ def collect(size, output):
     key = os.getenv("DASHSCOPE_API_KEY")
     if not key:
         raise SystemExit("Set DASHSCOPE_API_KEY before collecting new answers.")
-    nodes = tuple("ABCDE"[:size])
+    nodes = tuple("ABCDEF"[:size])
     edges = tuple(permutations(nodes, 2))
     path = output/f"draws-{size}.json"
     saved = json.loads(path.read_text()) if path.exists() else {}
@@ -609,7 +703,7 @@ def collect(size, output):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--output", type=Path, default=Path("results"))
-    parser.add_argument("--collect", type=int, choices=(4,5), help="Run a new API baseline instead of offline replay.")
+    parser.add_argument("--collect", type=int, choices=(4,5,6), help="Run a new API baseline instead of offline replay.")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     if args.collect:

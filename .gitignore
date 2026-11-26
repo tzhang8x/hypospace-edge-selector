@@ -1,0 +1,4 @@
+*.pptx
+six-node-results.json
+results/
+__pycache__/

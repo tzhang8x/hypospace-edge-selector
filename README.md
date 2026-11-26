@@ -1,8 +1,8 @@
 # Learning to recover more causal graphs on HypoSpace
 
-Can a small model turn a repeated correct answer from a language model into a different correct answer? We study this question on the causal-graph task in HypoSpace. We freeze Qwen3.8-27B, train a multilayer perceptron (MLP) to rank single-edge edits on four-node graphs, and test the frozen ranker on five-node graphs.
+Can a small model turn a repeated correct answer from a language model into a different correct answer? We study this question on the causal-graph task in HypoSpace. We freeze Qwen3.8-27B, train a multilayer perceptron (MLP) to rank single-edge edits on four-node graphs, and test the same frozen ranker on five- and six-node graphs.
 
-**Main result.** On 30 five-node questions, random editing recovered **93** distinct valid graphs. The learned selector recovered **179**. Both methods used the same 360 recorded Qwen answers and exactly 205 candidate checks. They preserved the same 240 valid submissions. Graphs are counted once per question.
+**Six-node transfer.** On 30 held-out questions, the MLP recovered **185 distinct valid graphs** and random editing recovered **91**. Both used 172 candidate checks and preserved 203 valid submissions out of 360. Distinct graphs are counted separately within each question.
 
 The complete experiment is in [hypospace.py](hypospace.py), including compact records of the original generations. The default command runs offline.
 
@@ -29,13 +29,14 @@ python -m pip install numpy networkx
 python hypospace.py --output results
 ```
 
-For an existing checkout, run `git submodule update --init --recursive` to fetch the original benchmark. Use a fresh output directory to reproduce the published run. The script enumerates the possible directed acyclic graphs (DAGs), reconstructs the questions, trains the ranker, and writes three files.
+For an existing checkout, run `git submodule update --init --recursive` to fetch the original benchmark. Use a fresh output directory to reproduce the published run. The script enumerates the possible directed acyclic graphs (DAGs), reconstructs the questions, trains the ranker, and writes four files.
 
 | Output | What to look for |
 |---|---|
 | `results/report.json` | Four-node results. `splits` records the held-out questions. `episodes` gives recovery, distinct graphs and checks for each question and policy. |
 | `results/edit-mlp.npz` | Final weights trained on the full four-node dataset after cross-validation. |
 | `results/five-node-report.json` | Frozen-model transfer results. In `summary`, the row with `policy="mlp"` and `k=1` has `distinct=179`, `checks=205` and `correct=240`. |
+| `results/six-node-report.json` | Six-node transfer. At K=1 the MLP records 185 distinct valid graphs, 172 checks and 203 valid submissions. The replay includes per-question solution counts. |
 
 ## A worked example
 
@@ -66,14 +67,14 @@ The model sees 24 features describing the **current graph and proposed edge**. T
 
 ## Evaluation protocol
 
-| | Four-node evaluation | Five-node transfer |
-|---|---:|---:|
-| Questions | 236 | 30 |
-| Recorded Qwen answers per question | 12 | 12 |
-| Total answers | 2,832 | 360 |
-| Model used for scoring edits | Five-fold cross-validation | Frozen model trained on all four-node data |
+| | Four-node evaluation | Five-node transfer | Six-node transfer |
+|---|---:|---:|---:|
+| Questions | 236 | 30 | 30 |
+| Recorded answers per question | 12 | 12 | 12 |
+| Total answers | 2,832 | 360 | 360 |
+| Model | Five-fold cross-validation | Frozen four-node model | Same frozen model |
 
-The four-node questions form 17 families under node renaming. Equivalent questions stay in the same fold. The five-node questions were sampled with seed 41 from 1,260 feasible sets of one or two intervention observations. All 30 selected questions happened to contain two separate single-node interventions. Five-node answers and labels were excluded from fitting.
+The four-node questions form 17 families under node renaming. Equivalent questions stay in the same fold. The five-node questions were sampled with seed 41 from 1,260 feasible sets of one or two intervention observations. All 30 selected questions happened to contain two separate single-node interventions. The six-node sample uses seed 41 and a pool of 6,462 feasible observation sets. All 30 selected six-node cases also have two observations. Both transfer sets were excluded from fitting.
 
 **Validity** is the fraction of submitted graphs that satisfy every observation. **Recovery** is computed separately for each question: divide the number of distinct valid graphs submitted by the total number of compatible DAGs. The tables report the mean of those fractions. For example, finding 2 of 10 solutions and 2 of 40 solutions on two questions gives mean recovery of 12.5%.
 
@@ -81,14 +82,16 @@ The four-node questions form 17 families under node renaming. Equivalent questio
 
 Each edit policy below may check **one candidate per repeated valid submission**. Fixed order, random order and the learned order use the same candidate set and verifier. Qwen alone submits the recorded answers unchanged.
 
-| Policy | Four-node mean recovery | Distinct graphs | Five-node mean recovery | Distinct graphs |
-|---|---:|---:|---:|---:|
-| Qwen alone | 15.69% | 323 | 3.36% | 35 |
-| Fixed order | 19.17% | 479 | 3.92% | 58 |
-| Random order | 24.35% | 648 | 6.46% | 93 |
-| **MLP ranking** | **34.81%** | **998** | **11.79%** | **179** |
+| Policy | 4-node recovery | Distinct | 5-node recovery | Distinct | 6-node recovery | Distinct |
+|---|---:|---:|---:|---:|---:|---:|
+| Qwen alone | 15.69% | 323 | 3.36% | 35 | 0.13% | 31 |
+| Fixed order | 19.17% | 479 | 3.92% | 58 | 0.22% | 67 |
+| Random order | 24.35% | 648 | 6.46% | 93 | 0.38% | 91 |
+| **MLP ranking** | **34.81%** | **998** | **11.79%** | **179** | **0.83%** | **185** |
 
 The five-node MLP improved mean recovery by **5.33 percentage points** over random selection. It found more valid graphs on 27 questions and tied on the other three. Validity was 66.00% on four nodes and 66.67% on five nodes for every policy.
+
+On six nodes the MLP beat random on 20 questions and tied on ten. Validity was 56.39% for every policy. Exact enumeration over 3,781,503 labeled DAGs gives between 105 and 26,880 compatible answers per sampled question; each method still submits only twelve answers.
 
 Allowing up to **three** checks gives a second comparison on five nodes. Random editing reaches 8.70% recovery with 482 candidate checks. The MLP reaches 11.79% with 327 checks. Compared with its own one-check result, the MLP spent additional checks without discovering additional graphs on this sample.
 
@@ -96,7 +99,7 @@ Allowing up to **three** checks gives a second comparison on five nodes. Random 
 
 The experiment measures **offline post-processing of a fixed generation history**. Every method receives the same ordered Qwen answers. An accepted edit changes the submissions used for deduplication, while the next Qwen answer remains the one originally recorded. Whether feeding edits back into the prompt improves subsequent generations is an open question.
 
-The transfer test covers 30 five-node causal questions, a single backbone and a fixed random-policy seed. Compare policies within each column. The four- and five-node question sets differ in their observation patterns and solution counts. Other HypoSpace domains require their own edit operations and verifiers.
+The transfer test covers 30 five-node and 30 six-node causal questions, a single backbone and a fixed random-policy seed. Compare policies within each column. The three question sets differ in their observation patterns and solution counts. Other HypoSpace domains require their own edit operations and verifiers.
 
 ## Optional: collect a fresh Qwen baseline
 
@@ -107,7 +110,7 @@ python hypospace.py --collect 5 --output fresh-run
 python hypospace.py --output fresh-run
 ```
 
-Collection saves each completed draw to `fresh-run/draws-5.json`. Rerun the first command to resume. Replay uses the fresh draws for that size and the embedded records for the other size. Use `--collect 4` to collect all 2,832 four-node answers. Fresh outputs can differ from the recorded run even with the same seeds.
+Collection saves each completed draw to `fresh-run/draws-5.json`. Rerun the first command to resume. Replay uses the fresh draws for that size and the embedded records for the other size. Use `--collect 6` for a fresh 360-call six-node run or `--collect 4` to collect all 2,832 four-node answers. Fresh outputs can differ from the recorded run even with the same seeds.
 
 ## Source guide
 
